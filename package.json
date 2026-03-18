@@ -10,6 +10,7 @@
     "tunnel": "npx expo start --tunnel"
   },
   "dependencies": {
+    "@expo/ngrok-bin-linux-x64": "^2.3.42",
     "@expo/vector-icons": "^15.0.0",
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~54.0.0",
