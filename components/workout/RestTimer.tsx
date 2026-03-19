@@ -152,7 +152,7 @@ export function RestTimer() {
         onPress={togglePause}
         activeOpacity={0.85}
       >
-        <Svg width={SIZE} height={SIZE}>
+        <Svg width={SIZE} height={SIZE} style={{ transform: [{ scaleX: -1 }] }}>
           {/* Track ring */}
           <Circle
             cx={SIZE / 2}
@@ -162,7 +162,7 @@ export function RestTimer() {
             strokeWidth={STROKE_W}
             fill="none"
           />
-          {/* Progress arc — no rotation, starts at 3 o'clock, drains clockwise */}
+          {/* Progress arc — rotated -90° so it starts at 12 o'clock, SVG mirrored so it drains counter-clockwise */}
           <Circle
             cx={SIZE / 2}
             cy={SIZE / 2}
@@ -173,6 +173,8 @@ export function RestTimer() {
             strokeDasharray={CIRCUMFERENCE}
             strokeDashoffset={dashOffset}
             strokeLinecap="round"
+            rotation="-90"
+            origin={`${SIZE / 2},${SIZE / 2}`}
           />
         </Svg>
 

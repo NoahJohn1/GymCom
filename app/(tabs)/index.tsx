@@ -8,7 +8,7 @@ export default function HomeScreen() {
   const colors = useColors();
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView edges={['bottom', 'left', 'right']} style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.content}>
         <RestTimer />
       </View>
@@ -18,5 +18,5 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  content: { paddingTop: Spacing.md },
+  content: { paddingTop: 5 },
 });
