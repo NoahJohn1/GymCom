@@ -2,6 +2,7 @@ export { PermissionResponse, PermissionExpiration, PermissionStatus } from 'expo
 
 export * from './ExpoAudio';
 
-export * from './Audio.types';
-export * from './AudioModule.types';
+export type * from './Audio.types';
+export type * from './AudioModule.types';
+export * from './AudioConstants';
 export * from './RecordingConstants';

@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   Modal,
   StyleSheet,
-  ScrollView,
   Dimensions,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -14,106 +13,65 @@ import { useColors, Typography, Spacing, Radius } from '../../constants/theme';
 import { TimerPreset } from '../../types';
 import { formatPresetLabel } from '../../utils/formatPresetLabel';
 
-const MAX_PRESETS = 8;
-// Sheet occupies top 25% → 75% of screen height, sitting higher on screen
-const SHEET_HEIGHT = Dimensions.get('window').height * 0.75;
+// Sheet occupies ~52% of screen height — just enough for the picker
+const SHEET_HEIGHT = Dimensions.get('window').height * 0.52;
 
 // Seconds picker uses 15-second increments (0, 15, 30, 45)
 const SEC_OPTIONS = [0, 15, 30, 45];
 
-type Screen =
-  | { type: 'list' }
-  | { type: 'edit'; id: string | null; minutes: number; seconds: number };
-
 interface Props {
   visible: boolean;
-  presets: TimerPreset[];
-  onChange: (presets: TimerPreset[]) => void;
+  editingPreset: TimerPreset | null; // null = add mode
+  onSave: (seconds: number, id: string | null) => void;
   onClose: () => void;
 }
 
-export function PresetManager({ visible, presets, onChange, onClose }: Props) {
+export function PresetManager({ visible, editingPreset, onSave, onClose }: Props) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const [screen, setScreen] = useState<Screen>({ type: 'list' });
+  const [minutes, setMinutes] = useState(1);
+  const [seconds, setSeconds] = useState(30);
 
-  function handleBackdropPress() {
-    if (screen.type === 'edit') {
-      setScreen({ type: 'list' });
+  useEffect(() => {
+    if (!visible) return;
+    if (editingPreset) {
+      const raw = editingPreset.seconds % 60;
+      const snapped = SEC_OPTIONS.includes(raw) ? raw : snapTo15(raw);
+      setMinutes(Math.floor(editingPreset.seconds / 60));
+      setSeconds(snapped);
     } else {
-      onClose();
+      setMinutes(1);
+      setSeconds(30);
     }
-  }
-
-  function moveUp(index: number) {
-    if (index === 0) return;
-    const next = [...presets];
-    [next[index - 1], next[index]] = [next[index], next[index - 1]];
-    onChange(next);
-  }
-
-  function moveDown(index: number) {
-    if (index === presets.length - 1) return;
-    const next = [...presets];
-    [next[index], next[index + 1]] = [next[index + 1], next[index]];
-    onChange(next);
-  }
-
-  function deletePreset(id: string) {
-    onChange(presets.filter((p) => p.id !== id));
-  }
-
-  function startEdit(preset: TimerPreset) {
-    const rawSecs = preset.seconds % 60;
-    const snapped = SEC_OPTIONS.includes(rawSecs) ? rawSecs : snapTo15(rawSecs);
-    setScreen({
-      type: 'edit',
-      id: preset.id,
-      minutes: Math.floor(preset.seconds / 60),
-      seconds: snapped,
-    });
-  }
-
-  function startAdd() {
-    setScreen({ type: 'edit', id: null, minutes: 1, seconds: 30 });
-  }
+  }, [visible, editingPreset]);
 
   function adjustMins(delta: number) {
-    if (screen.type !== 'edit') return;
-    setScreen({ ...screen, minutes: Math.max(0, Math.min(59, screen.minutes + delta)) });
+    setMinutes((prev) => Math.max(0, Math.min(59, prev + delta)));
   }
 
   function adjustSecs(delta: number) {
-    if (screen.type !== 'edit') return;
-    const idx = SEC_OPTIONS.indexOf(screen.seconds);
+    const idx = SEC_OPTIONS.indexOf(seconds);
     const newIdx = idx + delta;
     if (newIdx >= SEC_OPTIONS.length) {
-      setScreen({ ...screen, minutes: Math.min(59, screen.minutes + 1), seconds: 0 });
+      setMinutes((prev) => Math.min(59, prev + 1));
+      setSeconds(0);
     } else if (newIdx < 0) {
-      if (screen.minutes > 0) {
-        setScreen({ ...screen, minutes: screen.minutes - 1, seconds: 45 });
+      if (minutes > 0) {
+        setMinutes((prev) => prev - 1);
+        setSeconds(45);
       }
     } else {
-      setScreen({ ...screen, seconds: SEC_OPTIONS[newIdx] });
+      setSeconds(SEC_OPTIONS[newIdx]);
     }
   }
 
-  function saveEdit() {
-    if (screen.type !== 'edit') return;
-    const totalSeconds = screen.minutes * 60 + screen.seconds;
+  function handleSave() {
+    const totalSeconds = minutes * 60 + seconds;
     if (totalSeconds < 15) return;
-
-    if (screen.id === null) {
-      const newPreset: TimerPreset = { id: `preset-${Date.now()}`, seconds: totalSeconds };
-      onChange([...presets, newPreset]);
-    } else {
-      onChange(presets.map((p) => (p.id === screen.id ? { ...p, seconds: totalSeconds } : p)));
-    }
-    setScreen({ type: 'list' });
+    onSave(totalSeconds, editingPreset?.id ?? null);
   }
 
-  const isEditing = screen.type === 'edit';
-  const totalSecs = isEditing ? screen.minutes * 60 + screen.seconds : 0;
+  const totalSecs = minutes * 60 + seconds;
   const canSave = totalSecs >= 15;
 
   return (
@@ -122,17 +80,16 @@ export function PresetManager({ visible, presets, onChange, onClose }: Props) {
       transparent
       animationType="fade"
       onRequestClose={onClose}
-      onShow={() => setScreen({ type: 'list' })}
     >
       <View style={styles.overlay}>
         {/* Backdrop */}
         <TouchableOpacity
           style={styles.backdrop}
           activeOpacity={1}
-          onPress={handleBackdropPress}
+          onPress={onClose}
         />
 
-        {/* Sheet — fixed height so it sits high on screen */}
+        {/* Sheet */}
         <View
           style={[
             styles.sheet,
@@ -149,227 +106,116 @@ export function PresetManager({ visible, presets, onChange, onClose }: Props) {
 
           {/* Header */}
           <View style={styles.header}>
-            {isEditing ? (
-              <TouchableOpacity onPress={() => setScreen({ type: 'list' })} hitSlop={12}>
-                <Ionicons name="chevron-back" size={22} color={colors.primary} />
-              </TouchableOpacity>
-            ) : (
-              <View style={{ width: 22 }} />
-            )}
+            <View style={{ width: 22 }} />
             <Text style={[Typography.h3, { color: colors.text }]}>
-              {isEditing
-                ? screen.id === null
-                  ? 'New Preset'
-                  : 'Edit Preset'
-                : 'Timer Presets'}
+              {editingPreset ? 'Edit Preset' : 'New Preset'}
             </Text>
             <TouchableOpacity onPress={onClose} hitSlop={12}>
               <Ionicons name="close" size={22} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
-          {/* ── List screen ───────────────────────────────────────────── */}
-          {!isEditing && (
-            <View style={styles.listWrapper}>
-              <ScrollView
-                style={styles.listArea}
-                contentContainerStyle={styles.listContent}
-                bounces={false}
-                showsVerticalScrollIndicator={false}
-              >
-                {presets.length === 0 && (
-                  <Text
-                    style={[
-                      Typography.body,
-                      {
-                        color: colors.textSecondary,
-                        textAlign: 'center',
-                        marginTop: Spacing.xl,
-                      },
-                    ]}
-                  >
-                    No presets yet. Add one below.
-                  </Text>
-                )}
-                {presets.map((preset, idx) => (
-                  <View
-                    key={preset.id}
-                    style={[styles.presetRow, { borderBottomColor: colors.border }]}
-                  >
-                    <Text style={[Typography.body, { color: colors.text, flex: 1 }]}>
-                      {formatPresetLabel(preset.seconds)}
-                    </Text>
-                    <View style={styles.rowActions}>
-                      <TouchableOpacity
-                        style={[styles.iconBtn, { opacity: idx === 0 ? 0.25 : 1 }]}
-                        onPress={() => moveUp(idx)}
-                        disabled={idx === 0}
-                        hitSlop={8}
-                      >
-                        <Ionicons name="chevron-up" size={20} color={colors.textSecondary} />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={[
-                          styles.iconBtn,
-                          { opacity: idx === presets.length - 1 ? 0.25 : 1 },
-                        ]}
-                        onPress={() => moveDown(idx)}
-                        disabled={idx === presets.length - 1}
-                        hitSlop={8}
-                      >
-                        <Ionicons name="chevron-down" size={20} color={colors.textSecondary} />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.iconBtn}
-                        onPress={() => startEdit(preset)}
-                        hitSlop={8}
-                      >
-                        <Ionicons name="pencil-outline" size={20} color={colors.primary} />
-                      </TouchableOpacity>
-                      <TouchableOpacity
-                        style={styles.iconBtn}
-                        onPress={() => deletePreset(preset.id)}
-                        hitSlop={8}
-                      >
-                        <Ionicons name="trash-outline" size={20} color={colors.danger} />
-                      </TouchableOpacity>
-                    </View>
-                  </View>
-                ))}
-              </ScrollView>
+          {/* Picker */}
+          <View style={styles.pickerArea}>
+            <Text
+              style={[
+                Typography.small,
+                {
+                  color: colors.textSecondary,
+                  textAlign: 'center',
+                  marginBottom: Spacing.xl,
+                },
+              ]}
+            >
+              Set duration
+            </Text>
 
-              {presets.length < MAX_PRESETS && (
+            <View style={styles.pickerRow}>
+              {/* Minutes */}
+              <View style={styles.pickerUnit}>
                 <TouchableOpacity
-                  style={[styles.addButton, { borderColor: colors.primary }]}
-                  onPress={startAdd}
+                  style={[styles.stepBtn, { backgroundColor: colors.primaryLight }]}
+                  onPress={() => adjustMins(1)}
                 >
-                  <Ionicons name="add-circle-outline" size={18} color={colors.primary} />
-                  <Text style={[Typography.body, { color: colors.primary, fontWeight: '600' }]}>
-                    Add Preset
-                  </Text>
+                  <Ionicons name="add" size={22} color={colors.primary} />
                 </TouchableOpacity>
-              )}
-
-              {presets.length >= MAX_PRESETS && (
+                <Text style={[styles.pickerValue, { color: colors.text }]}>
+                  {minutes}
+                </Text>
+                <TouchableOpacity
+                  style={[styles.stepBtn, { backgroundColor: colors.primaryLight }]}
+                  onPress={() => adjustMins(-1)}
+                >
+                  <Ionicons name="remove" size={22} color={colors.primary} />
+                </TouchableOpacity>
                 <Text
                   style={[
                     Typography.small,
-                    {
-                      color: colors.textSecondary,
-                      textAlign: 'center',
-                      margin: Spacing.md,
-                    },
+                    { color: colors.textSecondary, marginTop: Spacing.xs },
                   ]}
                 >
-                  Maximum of {MAX_PRESETS} presets reached
+                  min
                 </Text>
-              )}
-            </View>
-          )}
-
-          {/* ── Edit / Add screen ─────────────────────────────────────── */}
-          {isEditing && (
-            <View style={styles.pickerArea}>
-              <Text
-                style={[
-                  Typography.small,
-                  {
-                    color: colors.textSecondary,
-                    textAlign: 'center',
-                    marginBottom: Spacing.xl,
-                  },
-                ]}
-              >
-                Set duration
-              </Text>
-
-              <View style={styles.pickerRow}>
-                {/* Minutes */}
-                <View style={styles.pickerUnit}>
-                  <TouchableOpacity
-                    style={[styles.stepBtn, { backgroundColor: colors.primaryLight }]}
-                    onPress={() => adjustMins(1)}
-                  >
-                    <Ionicons name="add" size={22} color={colors.primary} />
-                  </TouchableOpacity>
-                  <Text style={[styles.pickerValue, { color: colors.text }]}>
-                    {screen.minutes}
-                  </Text>
-                  <TouchableOpacity
-                    style={[styles.stepBtn, { backgroundColor: colors.primaryLight }]}
-                    onPress={() => adjustMins(-1)}
-                  >
-                    <Ionicons name="remove" size={22} color={colors.primary} />
-                  </TouchableOpacity>
-                  <Text
-                    style={[
-                      Typography.small,
-                      { color: colors.textSecondary, marginTop: Spacing.xs },
-                    ]}
-                  >
-                    min
-                  </Text>
-                </View>
-
-                <Text style={[styles.pickerColon, { color: colors.textSecondary }]}>:</Text>
-
-                {/* Seconds */}
-                <View style={styles.pickerUnit}>
-                  <TouchableOpacity
-                    style={[styles.stepBtn, { backgroundColor: colors.primaryLight }]}
-                    onPress={() => adjustSecs(1)}
-                  >
-                    <Ionicons name="add" size={22} color={colors.primary} />
-                  </TouchableOpacity>
-                  <Text style={[styles.pickerValue, { color: colors.text }]}>
-                    {String(screen.seconds).padStart(2, '0')}
-                  </Text>
-                  <TouchableOpacity
-                    style={[styles.stepBtn, { backgroundColor: colors.primaryLight }]}
-                    onPress={() => adjustSecs(-1)}
-                  >
-                    <Ionicons name="remove" size={22} color={colors.primary} />
-                  </TouchableOpacity>
-                  <Text
-                    style={[
-                      Typography.small,
-                      { color: colors.textSecondary, marginTop: Spacing.xs },
-                    ]}
-                  >
-                    sec (±15s)
-                  </Text>
-                </View>
               </View>
 
-              {/* Live preview */}
-              <Text
-                style={[
-                  Typography.body,
-                  {
-                    color: canSave ? colors.text : colors.danger,
-                    textAlign: 'center',
-                    marginTop: Spacing.lg,
-                    fontWeight: '600',
-                  },
-                ]}
-              >
-                {canSave ? formatPresetLabel(totalSecs) : 'Minimum 15 seconds'}
-              </Text>
+              <Text style={[styles.pickerColon, { color: colors.textSecondary }]}>:</Text>
 
-              <TouchableOpacity
-                style={[
-                  styles.saveButton,
-                  { backgroundColor: canSave ? colors.primary : colors.border },
-                ]}
-                onPress={saveEdit}
-                disabled={!canSave}
-              >
-                <Text style={[Typography.body, { color: colors.white, fontWeight: '700' }]}>
-                  Save
+              {/* Seconds */}
+              <View style={styles.pickerUnit}>
+                <TouchableOpacity
+                  style={[styles.stepBtn, { backgroundColor: colors.primaryLight }]}
+                  onPress={() => adjustSecs(1)}
+                >
+                  <Ionicons name="add" size={22} color={colors.primary} />
+                </TouchableOpacity>
+                <Text style={[styles.pickerValue, { color: colors.text }]}>
+                  {String(seconds).padStart(2, '0')}
                 </Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.stepBtn, { backgroundColor: colors.primaryLight }]}
+                  onPress={() => adjustSecs(-1)}
+                >
+                  <Ionicons name="remove" size={22} color={colors.primary} />
+                </TouchableOpacity>
+                <Text
+                  style={[
+                    Typography.small,
+                    { color: colors.textSecondary, marginTop: Spacing.xs },
+                  ]}
+                >
+                  sec (±15s)
+                </Text>
+              </View>
             </View>
-          )}
+
+            {/* Live preview */}
+            <Text
+              style={[
+                Typography.body,
+                {
+                  color: canSave ? colors.text : colors.danger,
+                  textAlign: 'center',
+                  marginTop: Spacing.lg,
+                  fontWeight: '600',
+                },
+              ]}
+            >
+              {canSave ? formatPresetLabel(totalSecs) : 'Minimum 15 seconds'}
+            </Text>
+
+            <TouchableOpacity
+              style={[
+                styles.saveButton,
+                { backgroundColor: canSave ? colors.primary : colors.border },
+              ]}
+              onPress={handleSave}
+              disabled={!canSave}
+            >
+              <Text style={[Typography.body, { color: colors.white, fontWeight: '700' }]}>
+                Save
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </Modal>
@@ -410,41 +256,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: Spacing.md,
     paddingVertical: Spacing.sm,
-  },
-  listWrapper: {
-    flex: 1,
-  },
-  listArea: {
-    flex: 1,
-  },
-  listContent: {
-    paddingHorizontal: Spacing.md,
-  },
-  presetRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: Spacing.md,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  rowActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.xs,
-  },
-  iconBtn: {
-    padding: Spacing.xs,
-  },
-  addButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: Spacing.xs,
-    margin: Spacing.md,
-    marginTop: Spacing.sm,
-    paddingVertical: Spacing.md,
-    borderRadius: Radius.md,
-    borderWidth: 1.5,
-    borderStyle: 'dashed',
   },
   pickerArea: {
     paddingHorizontal: Spacing.xl,
