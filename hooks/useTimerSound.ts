@@ -3,7 +3,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useEffect, useCallback, useRef } from 'react';
 
 const SOUND_PREF_KEY = 'timer_sound_enabled';
-const SOUND_SOURCE = require('../assets/sounds/timer-done.mp3');
+const SOUND_SOURCE = require('../assets/sounds/timer_done.mp3');
 
 export function useTimerSound() {
   const [soundEnabled, setSoundEnabled] = useState(true);

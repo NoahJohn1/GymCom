@@ -9,8 +9,12 @@
  * Long-press any chip → wiggle edit mode (tap-to-swap reordering,
  * ❌ delete badge, pencil edit badge). Sound toggle persists to AsyncStorage.
  */
-import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+// expo-notifications is unavailable in Expo Go (SDK 53+). Load it optionally
+// so the app still runs — notifications just won't fire until a dev build is used.
+let Notifications: typeof import('expo-notifications') | null = null;
+try { Notifications = require('expo-notifications'); } catch {}
 import Svg, { Circle } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useColors, Typography, Spacing, Radius } from '../../constants/theme';
@@ -57,6 +61,58 @@ export function RestTimer() {
 
   const { soundEnabled, toggleSound, playDoneSound } = useTimerSound();
 
+  // Refs for background timestamp reconciliation
+  const backgroundTimeRef = useRef<number | null>(null);
+  const remainingRef = useRef(remaining);
+  useEffect(() => { remainingRef.current = remaining; }, [remaining]);
+
+  // Schedule a local notification so the done sound fires even when backgrounded
+  const notificationIdRef = useRef<string | null>(null);
+
+  const scheduleTimerNotification = useCallback(async (seconds: number) => {
+    if (!soundEnabled || !Notifications) return;
+    await cancelTimerNotification();
+    notificationIdRef.current = await Notifications.scheduleNotificationAsync({
+      content: {
+        title: 'Rest Timer',
+        body: 'Time is up!',
+        sound: 'timer_done.mp3',
+        ...(Notifications.AndroidNotificationPriority && { priority: Notifications.AndroidNotificationPriority.HIGH }),
+      },
+      trigger: {
+        type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds,
+        repeats: false,
+        channelId: 'timer-alerts',
+      },
+    });
+  }, [soundEnabled]);
+
+  const cancelTimerNotification = useCallback(async () => {
+    if (notificationIdRef.current && Notifications) {
+      await Notifications.cancelScheduledNotificationAsync(notificationIdRef.current);
+      notificationIdRef.current = null;
+    }
+  }, []);
+
+  // Set up notification channel (Android) and permissions on mount
+  useEffect(() => {
+    if (!Notifications) return;
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: false,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+      }),
+    });
+    Notifications.setNotificationChannelAsync('timer-alerts', {
+      name: 'Timer Alerts',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'timer_done.mp3',
+    });
+    Notifications.requestPermissionsAsync();
+  }, []);
+
   // Load persisted presets on mount
   useEffect(() => {
     loadTimerPresets().then((stored) => {
@@ -80,12 +136,41 @@ export function RestTimer() {
     return () => clearInterval(id);
   }, [isRunning, timerKey]);
 
+  // AppState listener — reconcile elapsed time when returning from background
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (nextState) => {
+      if (nextState === 'background' || nextState === 'inactive') {
+        if (isRunning && backgroundTimeRef.current === null) {
+          backgroundTimeRef.current = Date.now();
+        }
+      } else if (nextState === 'active') {
+        if (backgroundTimeRef.current !== null && isRunning) {
+          const elapsed = Math.floor((Date.now() - backgroundTimeRef.current) / 1000);
+          backgroundTimeRef.current = null;
+          const newRemaining = remainingRef.current - elapsed;
+          if (newRemaining <= 0) {
+            setIsRunning(false);
+            setIsDone(true);
+            setRemaining(total);
+            cancelTimerNotification();
+          } else {
+            setRemaining(newRemaining);
+          }
+        } else {
+          backgroundTimeRef.current = null;
+        }
+      }
+    });
+    return () => sub.remove();
+  }, [isRunning, total, playDoneSound]);
+
   // Completion: fires when remaining hits 0
   useEffect(() => {
     if (remaining === 0) {
       setIsRunning(false);
       setIsDone(true);
       setRemaining(total);
+      cancelTimerNotification();
       playDoneSound();
     }
   }, [remaining]);
@@ -97,6 +182,7 @@ export function RestTimer() {
     setHasStarted(true);
     setIsRunning(true);
     setTimerKey((k) => k + 1);
+    scheduleTimerNotification(seconds);
   }
 
   function togglePause() {
@@ -104,9 +190,16 @@ export function RestTimer() {
       setIsDone(false);
       setIsRunning(true);
       setHasStarted(true);
+      scheduleTimerNotification(remaining);
     } else {
-      setIsRunning((r) => !r);
+      const willRun = !isRunning;
+      setIsRunning(willRun);
       setHasStarted(true);
+      if (willRun) {
+        scheduleTimerNotification(remaining);
+      } else {
+        cancelTimerNotification();
+      }
     }
   }
 
@@ -115,6 +208,7 @@ export function RestTimer() {
     setHasStarted(false);
     setIsDone(false);
     setRemaining(total);
+    cancelTimerNotification();
   }
 
   function addTime() {
@@ -127,6 +221,7 @@ export function RestTimer() {
       setHasStarted(true);
       setTimerKey((k) => k + 1);
     }
+    if (isRunning || isDone) scheduleTimerNotification(newRemaining);
   }
 
   function exitWiggle() {

@@ -10,14 +10,20 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.gymcom.app",
       "infoPlist": {
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#FF6B35"
       },
-      "package": "com.gymcom.app"
+      "package": "com.gymcom.app",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -30,6 +36,14 @@
         {
           "microphonePermission": false
         }
+      ],
+      [
+        "expo-notifications",
+        {
+          "sounds": [
+            "./assets/sounds/timer_done.mp3"
+          ]
+        }
       ]
     ],
     "experiments": {
@@ -37,7 +51,9 @@
     },
     "extra": {
       "router": {},
-      "eas": {}
+      "eas": {
+        "projectId": "e99bb594-3824-48ff-ad66-d719ad16a68f"
+      }
     }
   }
 }
