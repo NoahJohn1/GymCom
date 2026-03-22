@@ -67,12 +67,12 @@ export function PresetManager({ visible, editingPreset, onSave, onClose }: Props
 
   function handleSave() {
     const totalSeconds = minutes * 60 + seconds;
-    if (totalSeconds < 15) return;
+    if (totalSeconds < 1) return;
     onSave(totalSeconds, editingPreset?.id ?? null);
   }
 
   const totalSecs = minutes * 60 + seconds;
-  const canSave = totalSecs >= 15;
+  const canSave = totalSecs >= 1;
 
   return (
     <Modal
@@ -188,6 +188,19 @@ export function PresetManager({ visible, editingPreset, onSave, onClose }: Props
               </View>
             </View>
 
+            {/* Quick picks */}
+            <View style={styles.quickPicks}>
+              {[1, 5, 10].map((s) => (
+                <TouchableOpacity
+                  key={s}
+                  style={[styles.quickBtn, { backgroundColor: colors.primaryLight, borderColor: colors.border }]}
+                  onPress={() => { setMinutes(0); setSeconds(0); onSave(s, editingPreset?.id ?? null); }}
+                >
+                  <Text style={[Typography.small, { color: colors.primary, fontWeight: '600' }]}>{s}s</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
             {/* Live preview */}
             <Text
               style={[
@@ -200,7 +213,7 @@ export function PresetManager({ visible, editingPreset, onSave, onClose }: Props
                 },
               ]}
             >
-              {canSave ? formatPresetLabel(totalSecs) : 'Minimum 15 seconds'}
+              {canSave ? formatPresetLabel(totalSecs) : 'Minimum 1 second'}
             </Text>
 
             <TouchableOpacity
@@ -291,6 +304,21 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: '300',
     marginBottom: 24,
+  },
+  quickPicks: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: Spacing.sm,
+    marginTop: Spacing.lg,
+  },
+  quickBtn: {
+    paddingHorizontal: Spacing.md,
+    paddingVertical: Spacing.xs,
+    borderRadius: Radius.sm,
+    borderWidth: 1,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   saveButton: {
     marginTop: Spacing.xl,
