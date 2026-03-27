@@ -77,7 +77,9 @@ export function RestTimer() {
         title: 'Rest Timer',
         body: 'Time is up!',
         sound: 'timer_done.mp3',
-        ...(Notifications.AndroidNotificationPriority && { priority: Notifications.AndroidNotificationPriority.HIGH }),
+        ...(Notifications.AndroidNotificationPriority && { priority: Notifications.AndroidNotificationPriority.MAX }),
+        // iOS: bypass mute switch (requires critical-alerts entitlement)
+        ios: { critical: true, criticalSoundVolume: 1.0 },
       },
       trigger: {
         type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
@@ -107,10 +109,17 @@ export function RestTimer() {
     });
     Notifications.setNotificationChannelAsync('timer-alerts', {
       name: 'Timer Alerts',
-      importance: Notifications.AndroidImportance.HIGH,
+      importance: Notifications.AndroidImportance.MAX,
       sound: 'timer_done.mp3',
+      bypassDnd: true,
+      // Route through alarm stream so it plays on silent/vibrate
+      audioAttributes: {
+        usage: 4, // AudioUsage.ALARM
+        contentType: 4, // AudioContentType.SONIFICATION
+        flags: { enforceAudibility: true, requestHardwareAudioVideoSynchronization: false },
+      },
     });
-    Notifications.requestPermissionsAsync();
+    Notifications.requestPermissionsAsync({ ios: { allowAlert: true, allowSound: true, allowCriticalAlerts: true } });
   }, []);
 
   // Load persisted presets on mount
