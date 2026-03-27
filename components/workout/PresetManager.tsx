@@ -14,7 +14,7 @@ import { TimerPreset } from '../../types';
 import { formatPresetLabel } from '../../utils/formatPresetLabel';
 
 // Sheet occupies ~52% of screen height — just enough for the picker
-const SHEET_HEIGHT = Dimensions.get('window').height * 0.52;
+const SHEET_HEIGHT = Dimensions.get('window').height * 0.65;
 
 // Seconds picker uses 15-second increments (0, 15, 30, 45)
 const SEC_OPTIONS = [0, 15, 30, 45];

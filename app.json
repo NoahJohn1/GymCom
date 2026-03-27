@@ -9,6 +9,9 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.gymcom.app",
+      "entitlements": {
+        "com.apple.developer.usernotifications.critical-alerts": true
+      },
       "infoPlist": {
         "UIBackgroundModes": [
           "audio"
