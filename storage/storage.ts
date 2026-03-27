@@ -2,6 +2,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   Exercise,
   WorkoutPlan,
+  Split,
+  Workout,
   UserPreferences,
   TimerPreset,
 } from '../types';
@@ -30,6 +32,32 @@ export async function loadPlans(): Promise<WorkoutPlan[]> {
 
 export async function savePlans(plans: WorkoutPlan[]): Promise<void> {
   await AsyncStorage.setItem(PLANS_KEY, JSON.stringify(plans));
+}
+
+// ─── Splits ───────────────────────────────────────────────────────────────────
+
+const SPLITS_KEY = 'splits';
+
+export async function loadSplits(): Promise<Split[]> {
+  const raw = await AsyncStorage.getItem(SPLITS_KEY);
+  return raw ? (JSON.parse(raw) as Split[]) : [];
+}
+
+export async function saveSplits(splits: Split[]): Promise<void> {
+  await AsyncStorage.setItem(SPLITS_KEY, JSON.stringify(splits));
+}
+
+// ─── Workouts ─────────────────────────────────────────────────────────────────
+
+const WORKOUTS_KEY = 'workouts';
+
+export async function loadWorkouts(): Promise<Workout[]> {
+  const raw = await AsyncStorage.getItem(WORKOUTS_KEY);
+  return raw ? (JSON.parse(raw) as Workout[]) : [];
+}
+
+export async function saveWorkouts(workouts: Workout[]): Promise<void> {
+  await AsyncStorage.setItem(WORKOUTS_KEY, JSON.stringify(workouts));
 }
 
 // ─── Preferences ─────────────────────────────────────────────────────────────

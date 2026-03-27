@@ -24,6 +24,7 @@ export default function TabLayout() {
         headerStyle: { backgroundColor: colors.card },
         headerTintColor: colors.text,
         headerShadowVisible: false,
+        sceneStyle: { backgroundColor: colors.background },
       }}
     >
       <Tabs.Screen
@@ -38,6 +39,13 @@ export default function TabLayout() {
         options={{
           title: 'Plans',
           tabBarIcon: ({ color }) => <TabIcon name="list-outline" color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="library"
+        options={{
+          title: 'Library',
+          tabBarIcon: ({ color }) => <TabIcon name="barbell-outline" color={color} />,
         }}
       />
       <Tabs.Screen

@@ -32,23 +32,47 @@ export interface Exercise {
   name: string;
   muscleGroup: MuscleGroup;
   equipment: Equipment;
+  type: 'weight' | 'time';
   notes?: string;
   isCustom?: boolean;
 }
 
-// ─── Workout Plans ────────────────────────────────────────────────────────────
+// ─── Exercise Defaults (per-split) ───────────────────────────────────────────
+
+export interface ExerciseDefaults {
+  sets?: number;
+  /** Weight-based: target rep range e.g. "8-12" */
+  reps?: string;
+  /** Weight-based: current working weight (raw number, unit from preferences) */
+  workingWeight?: number;
+  /** Time-based: target duration e.g. "60s" */
+  duration?: string;
+  /** Time-based: personal best in seconds */
+  personalBest?: number;
+}
+
+// ─── Splits / Workouts ────────────────────────────────────────────────────────
 
 export interface PlannedExercise {
   exerciseId: string;
-  /** Number of working sets */
-  sets: number;
-  /** Target reps — can be a range string like "8-12" */
-  reps: string;
-  /** Default rest between sets in seconds */
-  restSeconds: number;
-  notes?: string;
 }
 
+export interface Split {
+  id: string;
+  name: string;
+  description?: string;
+  workoutIds: string[];
+  exerciseDefaults?: Record<string, ExerciseDefaults>;
+}
+
+export interface Workout {
+  id: string;
+  name: string;
+  splitId: string;
+  exerciseSlots: PlannedExercise[];
+}
+
+/** @deprecated Use Split/Workout instead */
 export interface WorkoutPlan {
   id: string;
   name: string;
@@ -71,4 +95,6 @@ export interface UserPreferences {
   unit: WeightUnit;
   themeColor?: string;
   onboardingComplete?: boolean;
+  activeSplitId?: string;
+  pinnedExerciseIds?: string[];
 }
