@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Expo Development Builds — Setup Guide</title>
+  <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAG">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+
+    :root {
+      --bwb-blue: #0B69B1;
+      --bwb-blue-secondary: #4075AC;
+      --bwb-blue-light: #D7EBFF;
+      --bwb-green: #74C048;
+      --bwb-teal: #2EA477;
+      --bwb-green-light: #DCF2E5;
+      --s1: #0B69B1; --s1-bg: #f0f7ff; --s1-border: #D7EBFF;
+      --s2: #2EA477; --s2-bg: #f0faf5; --s2-border: #DCF2E5;
+      --s3: #4075AC; --s3-bg: #f2f6fb; --s3-border: #d4e2f0;
+      --s4: #74C048; --s4-bg: #f5fbf0; --s4-border: #d8f0c8;
+      --s5: #1a6b8a; --s5-bg: #f0f8fa; --s5-border: #cce8f0;
+      --s6: #3d8b5e; --s6-bg: #f2f9f5; --s6-border: #d0eadb;
+      --s7: #5a7dba; --s7-bg: #f4f6fb; --s7-border: #d8e1f2;
+      --s8: #4a9a6e; --s8-bg: #f3faf6; --s8-border: #d2eede;
+      --bg: #f5f7fa;
+      --bg-content: #ffffff;
+      --text: #1a1a2e;
+      --text-muted: #5a6577;
+      --text-light: #8892a4;
+      --sidebar-bg: #0B69B1;
+      --sidebar-text: #ffffff;
+      --sidebar-hover: rgba(255,255,255,0.12);
+      --sidebar-active: rgba(255,255,255,0.2);
+      --sidebar-divider: rgba(255,255,255,0.15);
+      --border: #e2e6ec;
+      --border-light: #eef1f5;
+      --code-bg: #f5f7fa;
+      --shadow: 0 1px 3px rgba(0,0,0,0.06);
+      --shadow-lg: 0 4px 12px rgba(0,0,0,0.08);
+      --success: #74C048;
+      --warn: #e8a735;
+      --danger: #c0392b;
+      --accent: var(--bwb-blue);
+    }
+
+    [data-theme="dark"] {
+      --bg: #0f1419;
+      --bg-content: #1a2028;
+      --text: #e1e5eb;
+      --text-muted: #8892a4;
+      --text-light: #5a6577;
+      --sidebar-bg: #0d1117;
+      --sidebar-text: #e1e5eb;
+      --sidebar-hover: rgba(255,255,255,0.06);
+      --sidebar-active: rgba(11,105,177,0.3);
+      --sidebar-divider: rgba(255,255,255,0.08);
+      --border: #2a3040;
+      --border-light: #222830;
+      --code-bg: #151b23;
+      --shadow: 0 1px 3px rgba(0,0,0,0.3);
+      --shadow-lg: 0 4px 12px rgba(0,0,0,0.4);
+      --s1-bg: #0d1a26; --s1-border: #1a3550;
+      --s2-bg: #0d1f18; --s2-border: #1a3d2e;
+      --s3-bg: #0f1520; --s3-border: #1e2d45;
+      --s4-bg: #141f0d; --s4-border: #2a3d1a;
+      --s5-bg: #0d171d; --s5-border: #1a3040;
+      --s6-bg: #0f1a14; --s6-border: #1e3528;
+      --s7-bg: #101520; --s7-border: #202d45;
+      --s8-bg: #0f1c15; --s8-border: #1e3828;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Montserrat', 'Segoe UI', system-ui, -apple-system, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      line-height: 1.65;
+      display: flex;
+      min-height: 100vh;
+    }
+
+    .sidebar {
+      width: 270px;
+      min-width: 270px;
+      background: var(--sidebar-bg);
+      color: var(--sidebar-text);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0;
+      left: 0;
+      bottom: 0;
+      z-index: 100;
+      overflow-y: auto;
+      transition: transform 0.3s ease;
+    }
+
+    .sidebar-header {
+      padding: 1.5rem 1.25rem 1rem;
+      border-bottom: 1px solid var(--sidebar-divider);
+    }
+
+    .sidebar-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      line-height: 1.3;
+      opacity: 0.95;
+    }
+
+    .sidebar-meta {
+      font-size: 0.72rem;
+      opacity: 0.55;
+      margin-top: 0.3rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 0.75rem 0;
+      overflow-y: auto;
+    }
+
+    .sidebar-nav-label {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      opacity: 0.4;
+      padding: 0.5rem 1.25rem 0.35rem;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      padding: 0.6rem 1.25rem;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 500;
+      transition: all 0.15s;
+      border-left: 3px solid transparent;
+      text-decoration: none;
+      color: var(--sidebar-text);
+      opacity: 0.75;
+    }
+
+    .nav-item:hover {
+      background: var(--sidebar-hover);
+      opacity: 1;
+    }
+
+    .nav-item.active {
+      background: var(--sidebar-active);
+      border-left-color: var(--bwb-green);
+      opacity: 1;
+      font-weight: 600;
+    }
+
+    .nav-item .nav-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.4rem;
+      height: 1.4rem;
+      border-radius: 50%;
+      font-size: 0.7rem;
+      font-weight: 700;
+      background: rgba(255,255,255,0.15);
+      flex-shrink: 0;
+    }
+
+    .nav-item.active .nav-num {
+      background: var(--bwb-green);
+      color: #fff;
+    }
+
+    .sidebar-footer {
+      padding: 0.75rem 1.25rem;
+      border-top: 1px solid var(--sidebar-divider);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 6px;
+      padding: 0.4rem 0.75rem;
+      color: var(--sidebar-text);
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+
+    .theme-toggle:hover {
+      background: rgba(255,255,255,0.18);
+    }
+
+    .theme-icon-light, .theme-icon-dark { font-size: 1rem; }
+    .theme-icon-dark { display: none; }
+    [data-theme="dark"] .theme-icon-light { display: none; }
+    [data-theme="dark"] .theme-icon-dark { display: inline; }
+
+    .sidebar-credit {
+      font-size: 0.65rem;
+      opacity: 0.35;
+    }
+
+    .sidebar-toggle {
+      display: none;
+      position: fixed;
+      top: 0.75rem;
+      left: 0.75rem;
+      z-index: 200;
+      background: var(--bwb-blue);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      width: 40px;
+      height: 40px;
+      font-size: 1.2rem;
+      cursor: pointer;
+      align-items: center;
+      justify-content: center;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .main {
+      flex: 1;
+      margin-left: 270px;
+      padding: 2rem 2.5rem 4rem;
+      max-width: 100%;
+      min-height: 100vh;
+    }
+
+    .content-header {
+      margin-bottom: 2rem;
+      padding-bottom: 1.25rem;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .content-header h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      color: var(--accent);
+      line-height: 1.3;
+    }
+
+    .content-header .meta {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+    }
+
+    .doc-section {
+      display: none;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .doc-section.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .section-card {
+      background: var(--bg-content);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow);
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .section-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 2px solid var(--border-light);
+    }
+
+    .section-card-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2.2rem;
+      height: 2.2rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+
+    .section-card-title {
+      font-size: 1.35rem;
+      font-weight: 700;
+    }
+
+    .section-1 .section-card-num { background: var(--s1); }
+    .section-1 .section-card-header { border-bottom-color: var(--s1-border); }
+    .section-2 .section-card-num { background: var(--s2); }
+    .section-2 .section-card-header { border-bottom-color: var(--s2-border); }
+    .section-3 .section-card-num { background: var(--s3); }
+    .section-3 .section-card-header { border-bottom-color: var(--s3-border); }
+    .section-4 .section-card-num { background: var(--s4); }
+    .section-4 .section-card-header { border-bottom-color: var(--s4-border); }
+    .section-5 .section-card-num { background: var(--s5); }
+    .section-5 .section-card-header { border-bottom-color: var(--s5-border); }
+    .section-6 .section-card-num { background: var(--s6); }
+    .section-6 .section-card-header { border-bottom-color: var(--s6-border); }
+    .section-7 .section-card-num { background: var(--s7); }
+    .section-7 .section-card-header { border-bottom-color: var(--s7-border); }
+    .section-8 .section-card-num { background: var(--s8); }
+    .section-8 .section-card-header { border-bottom-color: var(--s8-border); }
+
+    .section-1 th { background: var(--s1); color: #fff; }
+    .section-2 th { background: var(--s2); color: #fff; }
+    .section-3 th { background: var(--s3); color: #fff; }
+    .section-4 th { background: var(--s4); color: #fff; }
+    .section-5 th { background: var(--s5); color: #fff; }
+    .section-6 th { background: var(--s6); color: #fff; }
+    .section-7 th { background: var(--s7); color: #fff; }
+    .section-8 th { background: var(--s8); color: #fff; }
+
+    .subsection {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin: 1rem 0;
+      overflow: hidden;
+      background: var(--bg-content);
+    }
+
+    .subsection > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 0.7rem 1rem;
+      font-size: 1rem;
+      font-weight: 600;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      user-select: none;
+      transition: background 0.15s;
+    }
+
+    .subsection > summary::-webkit-details-marker { display: none; }
+
+    .subsection > summary::before {
+      content: '\25B8';
+      font-size: 0.75rem;
+      transition: transform 0.2s;
+    }
+
+    .subsection[open] > summary::before {
+      transform: rotate(90deg);
+    }
+
+    .subsection > summary:hover { background: var(--border-light); }
+
+    .subsection-body {
+      padding: 0.75rem 1rem 1rem;
+    }
+
+    .step-card {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      margin: 0.75rem 0;
+      overflow: hidden;
+    }
+
+    .step-card > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 0.6rem 1rem;
+      font-size: 0.92rem;
+      font-weight: 600;
+      color: var(--accent);
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      user-select: none;
+    }
+
+    .step-card > summary::-webkit-details-marker { display: none; }
+
+    .step-card > summary::before {
+      content: '\25B8';
+      font-size: 0.7rem;
+      transition: transform 0.2s;
+    }
+
+    .step-card[open] > summary::before {
+      transform: rotate(90deg);
+    }
+
+    .step-card > summary:hover { background: var(--border-light); }
+
+    .step-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.35rem;
+      height: 1.35rem;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .step-card-body {
+      padding: 0.75rem 1rem 1rem;
+      border-top: 1px solid var(--border);
+    }
+
+    h2 { font-size: 1.25rem; font-weight: 700; margin: 1.75rem 0 0.6rem; color: var(--text); }
+    h3 { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.5rem; }
+    h4 { font-size: 0.95rem; font-weight: 600; margin: 1.25rem 0 0.4rem; color: var(--accent); }
+    p  { margin: 0.5rem 0; }
+    ul, ol { margin: 0.5rem 0 0.5rem 1.5rem; }
+    li { margin: 0.3rem 0; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    strong { font-weight: 600; }
+
+    .table-wrapper {
+      overflow-x: auto;
+      margin: 1rem 0;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    th {
+      background: var(--accent);
+      color: white;
+      text-align: left;
+      padding: 0.65rem 0.85rem;
+      font-weight: 600;
+      font-size: 0.82rem;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    td {
+      padding: 0.55rem 0.85rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tr:nth-child(even) td { background: var(--bg); }
+
+    code {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      background: var(--code-bg);
+      padding: 0.15rem 0.45rem;
+      border-radius: 4px;
+      font-size: 0.85em;
+      border: 1px solid var(--border);
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+      line-height: 1.5;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+      border: none;
+      font-size: 0.85rem;
+    }
+
+    .callout {
+      border-radius: 8px;
+      padding: 1rem 1.25rem;
+      margin: 1rem 0;
+      font-size: 0.92rem;
+    }
+
+    .callout-info {
+      background: var(--s1-bg);
+      border-left: 4px solid var(--bwb-blue);
+    }
+
+    .callout-warn {
+      background: #fffbf0;
+      border-left: 4px solid var(--warn);
+    }
+
+    [data-theme="dark"] .callout-warn { background: #1f1a0d; }
+
+    .callout-danger {
+      background: #fef5f5;
+      border-left: 4px solid var(--danger);
+    }
+
+    [data-theme="dark"] .callout-danger { background: #1f0d0d; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.15rem 0.55rem;
+      border-radius: 4px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .badge-info    { background: var(--bwb-blue-light); color: var(--bwb-blue); }
+    .badge-success { background: var(--bwb-green-light); color: #2d7a1a; }
+    .badge-warn    { background: #fff3d4; color: #8a6914; }
+    .badge-danger  { background: #fde8e8; color: #922; }
+
+    @media (max-width: 900px) {
+      .sidebar { transform: translateX(-100%); }
+      .sidebar.open { transform: translateX(0); }
+      .sidebar-toggle { display: flex; }
+      .main { margin-left: 0; padding: 3.5rem 1.25rem 3rem; }
+    }
+
+    @media (min-width: 1400px) {
+      .main { padding: 2.5rem 4rem 4rem; }
+    }
+
+    @media print {
+      .sidebar, .sidebar-toggle { display: none !important; }
+      .main { margin-left: 0; padding: 1rem; }
+      .doc-section { display: block !important; page-break-inside: avoid; margin-bottom: 2rem; }
+      .section-card { box-shadow: none; border: 1px solid #ccc; break-inside: avoid; }
+      .subsection, .step-card { border: 1px solid #ccc; }
+      body { background: #fff; }
+    }
+  </style>
+</head>
+<body>
+  <button class="sidebar-toggle" onclick="document.querySelector('.sidebar').classList.toggle('open')" aria-label="Toggle navigation">&#9776;</button>
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-title">Expo Development Builds &mdash; Setup Guide</div>
+      <div class="sidebar-meta">GymCom &middot; March 21, 2026</div>
+    </div>
+    <nav class="sidebar-nav" id="sidebar-nav">
+      <div class="sidebar-nav-label">Sections</div>
+    </nav>
+    <div class="sidebar-footer">
+      <span class="sidebar-credit">Claude Code</span>
+      <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle dark mode">
+        <span class="theme-icon-light">&#9790;</span>
+        <span class="theme-icon-dark">&#9788;</span>
+        <span class="theme-label-light">Dark</span>
+        <span class="theme-label-dark" style="display:none">Light</span>
+      </button>
+    </div>
+  </aside>
+
+  <div class="main">
+    <div class="content-header">
+      <h1>Expo Development Builds &mdash; Setup Guide</h1>
+      <div class="meta">GymCom &middot; Generated March 21, 2026</div>
+    </div>
+
+    <div id="content-area">
+
+      <!-- Section 1: What Are Dev Builds? -->
+      <section class="doc-section" data-title="What Are Dev Builds?">
+        <div class="section-card">
+          <div class="section-card-header">
+            <span class="section-card-num">1</span>
+            <span class="section-card-title">What Are Dev Builds?</span>
+          </div>
+          <p><strong>Expo Go</strong> is a pre-built universal app with a fixed set of native modules. It's fast for prototyping but limited &mdash; some native packages like <code>expo-notifications</code> were removed since SDK 53.</p>
+          <p><strong>Development Build</strong> is a custom-compiled app that includes your project's specific native dependencies. You compile it once, then develop against it identically to Expo Go (QR code scanning, hot reload, etc.).</p>
+          <div class="callout callout-info">
+            <strong>Key difference:</strong> Expo Go = "one size fits all" &rarr; Dev Build = "compiled just for your project"
+          </div>
+          <h3>When to Rebuild</h3>
+          <ul>
+            <li><strong>Rebuild required:</strong> Adding or removing native dependencies (e.g. <code>expo-notifications</code>, <code>expo-camera</code>)</li>
+            <li><strong>No rebuild needed:</strong> JavaScript/TypeScript changes, styling, component updates, new screens</li>
+          </ul>
+          <p>Rule of thumb: if <code>npx expo install</code> installs something with native code, rebuild. Otherwise, hot reload handles it.</p>
+        </div>
+      </section>
+
+      <!-- Section 2: Prerequisites -->
+      <section class="doc-section" data-title="Prerequisites">
+        <div class="section-card">
+          <div class="section-card-header">
+            <span class="section-card-num">2</span>
+            <span class="section-card-title">Prerequisites</span>
+          </div>
+          <div class="table-wrapper">
+            <table>
+              <thead>
+                <tr><th>Requirement</th><th>Details</th></tr>
+              </thead>
+              <tbody>
+                <tr><td>Node.js</td><td>Must be installed</td></tr>
+                <tr><td>Expo account</td><td>Free at <strong>expo.dev</strong></td></tr>
+                <tr><td>EAS CLI</td><td><code>npm install -g eas-cli</code></td></tr>
+                <tr><td>Login</td><td><code>eas login</code></td></tr>
+                <tr><td>iOS physical devices</td><td>Apple Developer account ($99/year)</td></tr>
+                <tr><td>Android</td><td>No paid account needed</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Section 3: Project Configuration -->
+      <section class="doc-section" data-title="Project Configuration">
+        <div class="section-card">
+          <div class="section-card-header">
+            <span class="section-card-num">3</span>
+            <span class="section-card-title">Project Configuration</span>
+          </div>
+
+          <details class="subsection" open>
+            <summary>eas.json &mdash; Build Profiles</summary>
+            <div class="subsection-body">
+              <p>The <code>development</code> profile enables the dev client and produces a directly installable APK for Android.</p>
+              <pre><code>{
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal",
+      "android": { "buildType": "apk" },
+      "env": { "NPM_CONFIG_LEGACY_PEER_DEPS": "true" }
+    }
+  }
+}</code></pre>
+              <div class="callout callout-info">
+                <strong>Why <code>NPM_CONFIG_LEGACY_PEER_DEPS</code>?</strong> GymCom uses <code>react@19.1.0</code>. Many packages have peer conflicts with <code>react-dom</code>. This flag bypasses those without breaking functionality.
+              </div>
+            </div>
+          </details>
+
+          <details class="subsection" open>
+            <summary>app.json &mdash; Native Plugins</summary>
+            <div class="subsection-body">
+              <p>Any native module needs its plugin registered under <code>"plugins"</code> in <code>app.json</code>.</p>
+              <pre><code>"plugins": [
+  "expo-router",
+  ["expo-audio", { "microphonePermission": false }],
+  ["expo-notifications", {
+    "sounds": ["./assets/sounds/timer_done.mp3"]
+  }]
+]</code></pre>
+              <div class="callout callout-warn">
+                <strong>Android naming rule:</strong> Resource names must use underscores only &mdash; no hyphens. Use <code>timer_done.mp3</code> not <code>timer-done.mp3</code>.
+              </div>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <!-- Section 4: Building for Android -->
+      <section class="doc-section" data-title="Building for Android">
+        <div class="section-card">
+          <div class="section-card-header">
+            <span class="section-card-num">4</span>
+            <span class="section-card-title">Building for Android</span>
+          </div>
+
+          <details class="step-card" open>
+            <summary>
+              <span class="step-num">1</span>
+              <code>eas build</code> &mdash; Build the APK
+            </summary>
+            <div class="step-card-body">
+              <pre><code>eas build --platform android --profile development</code></pre>
+              <p>EAS uploads your project and builds in the cloud (5&ndash;15 minutes). On completion, you get a download link for the APK.</p>
+            </div>
+          </details>
+
+          <details class="step-card" open>
+            <summary>
+              <span class="step-num">2</span>
+              Install on device
+            </summary>
+            <div class="step-card-body">
+              <ul>
+                <li>Open the download link on your Android phone</li>
+                <li>Enable <strong>"Install from unknown sources"</strong> in Settings if prompted</li>
+                <li>Install the APK</li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="step-card" open>
+            <summary>
+              <span class="step-num">3</span>
+              Connect and develop
+            </summary>
+            <div class="step-card-body">
+              <pre><code>npx expo start</code></pre>
+              <p>Open the dev build app on your phone and scan the QR code &mdash; same workflow as Expo Go.</p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <!-- Section 5: Building for iOS -->
+      <section class="doc-section" data-title="Building for iOS">
+        <div class="section-card">
+          <div class="section-card-header">
+            <span class="section-card-num">5</span>
+            <span class="section-card-title">Building for iOS</span>
+          </div>
+
+          <details class="subsection" open>
+            <summary>Simulator</summary>
+            <div class="subsection-body">
+              <pre><code>eas build --platform ios --profile development</code></pre>
+              <p>Produces a <code>.app</code> for the iOS simulator. Drag and drop onto the simulator to install.</p>
+            </div>
+          </details>
+
+          <details class="subsection" open>
+            <summary>Physical Device</summary>
+            <div class="subsection-body">
+              <ul>
+                <li>Requires Apple Developer account ($99/year)</li>
+                <li>EAS handles provisioning profiles automatically</li>
+                <li>Register devices with <code>eas device:create</code></li>
+                <li>Build with: <code>eas build --platform ios --profile development</code></li>
+                <li>Install via QR code link from EAS</li>
+              </ul>
+            </div>
+          </details>
+        </div>
+      </section>
+
+      <!-- Section 6: Both Platforms -->
+      <section class="doc-section" data-title="Both Platforms">
+        <div class="section-card">
+          <div class="section-card-header">
+            <span class="section-card-num">6</span>
+            <span class="section-card-title">Both Platforms at Once</span>
+          </div>
+          <pre><code>eas build --platform ios --profile development
+eas build --platform android --profile development</code></pre>
+          <ul>
+            <li>Each produces a separate installable artifact</li>
+            <li>Both connect to the same <code>npx expo start</code> dev server</li>
+            <li>Hot reload works on both simultaneously</li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 7: Production & Store Submission -->
+      <section class="doc-section" data-title="Production & Stores">
+        <div class="section-card">
+          <div class="section-card-header">
+            <span class="section-card-num">7</span>
+            <span class="section-card-title">Production Builds &amp; Store Submission</span>
+          </div>
+          <pre><code># Production builds
+eas build --platform ios --profile production
+eas build --platform android --profile production
+
+# Submit to stores
+eas submit --platform ios
+eas submit --platform android</code></pre>
+          <ul>
+            <li>EAS handles code signing (iOS) and keystores (Android)</li>
+            <li><code>app.json</code> must have <code>ios.bundleIdentifier</code> and <code>android.package</code> configured</li>
+            <li>GymCom already has both: <code>com.gymcom.app</code></li>
+          </ul>
+        </div>
+      </section>
+
+      <!-- Section 8: Common Issues -->
+      <section class="doc-section" data-title="Common Issues">
+        <div class="section-card">
+          <div class="section-card-header">
+            <span class="section-card-num">8</span>
+            <span class="section-card-title">Common Issues</span>
+          </div>
+
+          <details class="subsection" open>
+            <summary>Android Resource Name Errors</summary>
+            <div class="subsection-body">
+              <p>Android resource names only allow <strong>lowercase letters, numbers, and underscores</strong>.</p>
+              <ul>
+                <li>Rename files like <code>timer-done.mp3</code> to <code>timer_done.mp3</code></li>
+                <li>Update all code references to match</li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="subsection" open>
+            <summary>Notification Channels (Android 8+)</summary>
+            <div class="subsection-body">
+              <ul>
+                <li>Notification sounds are tied to <strong>channels</strong>, not individual notifications</li>
+                <li>Create channels with <code>Notifications.setNotificationChannelAsync()</code> specifying the sound</li>
+                <li>Channels are cached by the OS &mdash; <strong>uninstall and reinstall</strong> if changing channel config</li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="subsection" open>
+            <summary>Expo Go Incompatibility</summary>
+            <div class="subsection-body">
+              <p>Some native modules don't work in Expo Go (SDK 53+). Use a try/catch to gracefully degrade:</p>
+              <pre><code>let Notifications = null;
+try { Notifications = require('expo-notifications'); } catch {}</code></pre>
+              <p>App works in Expo Go without notifications; full functionality in dev build.</p>
+            </div>
+          </details>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <script>
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      localStorage.setItem('doc-it-theme', next);
+      document.querySelector('.theme-label-light').style.display = next === 'dark' ? 'none' : '';
+      document.querySelector('.theme-label-dark').style.display = next === 'dark' ? '' : 'none';
+    }
+
+    (function() {
+      const saved = localStorage.getItem('doc-it-theme');
+      if (saved) {
+        document.documentElement.setAttribute('data-theme', saved);
+        document.querySelector('.theme-label-light').style.display = saved === 'dark' ? 'none' : '';
+        document.querySelector('.theme-label-dark').style.display = saved === 'dark' ? '' : 'none';
+      }
+    })();
+
+    (function() {
+      const sections = document.querySelectorAll('.doc-section');
+      const nav = document.getElementById('sidebar-nav');
+
+      if (sections.length === 0) return;
+
+      sections.forEach(function(section, i) {
+        const title = section.getAttribute('data-title') || 'Section ' + (i + 1);
+        const colorClass = 'section-' + ((i % 8) + 1);
+        section.classList.add(colorClass);
+
+        var item = document.createElement('a');
+        item.className = 'nav-item';
+        item.setAttribute('data-index', i);
+        item.innerHTML = '<span class="nav-num">' + (i + 1) + '</span>' + title;
+        item.href = '#';
+        item.addEventListener('click', function(e) {
+          e.preventDefault();
+          showSection(i);
+          document.querySelector('.sidebar').classList.remove('open');
+        });
+        nav.appendChild(item);
+      });
+
+      function showSection(index) {
+        sections.forEach(function(s) { s.classList.remove('active'); });
+        sections[index].classList.add('active');
+        var navItems = nav.querySelectorAll('.nav-item');
+        navItems.forEach(function(n) { n.classList.remove('active'); });
+        navItems[index].classList.add('active');
+      }
+
+      showSection(0);
+
+      document.addEventListener('keydown', function(e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+        var current = nav.querySelector('.nav-item.active');
+        var idx = current ? parseInt(current.getAttribute('data-index')) : 0;
+        if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+          e.preventDefault();
+          showSection(Math.max(0, idx - 1));
+        } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          showSection(Math.min(sections.length - 1, idx + 1));
+        }
+      });
+    })();
+  </script>
+</body>
+</html>
