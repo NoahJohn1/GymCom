@@ -466,7 +466,6 @@ export function RestTimer() {
 
 const styles = StyleSheet.create({
   container: {
-    marginHorizontal: Spacing.md,
     borderRadius: Radius.lg,
     borderWidth: 1,
     paddingBottom: Spacing.lg,

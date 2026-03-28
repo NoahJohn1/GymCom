@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "GymCom",
+    "name": "GymComdev",
     "slug": "gymcom",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -23,6 +23,7 @@
         "backgroundColor": "#FF6B35"
       },
       "package": "com.gymcom.app",
+      "softwareKeyboardLayoutMode": "pan",
       "permissions": [
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS"

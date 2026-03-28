@@ -97,4 +97,11 @@ export interface UserPreferences {
   onboardingComplete?: boolean;
   activeSplitId?: string;
   pinnedExerciseIds?: string[];
+  /** 0-based index into the active split's workoutIds array */
+  splitCurrentIndex?: number;
+  /** YYYY-MM-DD — last date the user confirmed or skipped */
+  splitLastDate?: string;
+  splitTodayStatus?: 'pending' | 'confirmed' | 'skipped' | 'cardio';
+  /** DEV ONLY — override the date the app treats as "today" (YYYY-MM-DD) */
+  devDateOverride?: string;
 }
