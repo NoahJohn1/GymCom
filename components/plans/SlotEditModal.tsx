@@ -30,6 +30,7 @@ export function SlotEditModal({ visible, defaults, exercise, unit, onSave, onClo
   const [sets, setSets] = useState('');
   const [reps, setReps] = useState('');
   const [workingWeight, setWorkingWeight] = useState('');
+  const [bodyWeight, setBodyWeight] = useState(false);
   const [duration, setDuration] = useState('');
   const [personalBest, setPersonalBest] = useState('');
 
@@ -38,6 +39,7 @@ export function SlotEditModal({ visible, defaults, exercise, unit, onSave, onClo
       setSets(defaults.sets != null ? String(defaults.sets) : '');
       setReps(defaults.reps ?? '');
       setWorkingWeight(defaults.workingWeight != null ? String(defaults.workingWeight) : '');
+      setBodyWeight(defaults.bodyWeight ?? false);
       setDuration(defaults.duration ?? '');
       setPersonalBest(defaults.personalBest != null ? String(defaults.personalBest) : '');
     }
@@ -61,8 +63,9 @@ export function SlotEditModal({ visible, defaults, exercise, unit, onSave, onClo
       updated.personalBest = isNaN(pb) ? undefined : pb;
     } else {
       updated.reps = reps.trim() || undefined;
+      updated.bodyWeight = bodyWeight || undefined;
       const ww = parseFloat(workingWeight);
-      updated.workingWeight = isNaN(ww) ? undefined : ww;
+      updated.workingWeight = bodyWeight ? undefined : (isNaN(ww) ? undefined : ww);
     }
 
     onSave(updated);
@@ -130,14 +133,26 @@ export function SlotEditModal({ visible, defaults, exercise, unit, onSave, onClo
                     placeholderTextColor={colors.textSecondary}
                   />
                 </Field>
+                <TouchableOpacity
+                  style={styles.checkboxRow}
+                  onPress={() => setBodyWeight((v) => !v)}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.checkbox, { borderColor: colors.primary, backgroundColor: bodyWeight ? colors.primary : 'transparent' }]}>
+                    {bodyWeight && <Ionicons name="checkmark" size={14} color={colors.white} />}
+                  </View>
+                  <Text style={[Typography.body, { color: colors.text }]}>Body weight exercise</Text>
+                </TouchableOpacity>
+
                 <Field label={`Working weight (${unit})`}>
                   <TextInput
-                    style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-                    value={workingWeight}
+                    style={[styles.input, { backgroundColor: bodyWeight ? colors.border : colors.card, borderColor: colors.border, color: bodyWeight ? colors.textSecondary : colors.text }]}
+                    value={bodyWeight ? '' : workingWeight}
                     onChangeText={setWorkingWeight}
                     keyboardType="decimal-pad"
-                    placeholder={`e.g. 135`}
+                    placeholder={bodyWeight ? 'Body weight' : 'e.g. 135'}
                     placeholderTextColor={colors.textSecondary}
+                    editable={!bodyWeight}
                   />
                 </Field>
               </>
@@ -188,6 +203,20 @@ const styles = StyleSheet.create({
     borderRadius: Radius.md,
     paddingHorizontal: Spacing.md,
     ...Typography.body,
+  },
+  checkboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.sm,
+    marginBottom: Spacing.md,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   saveBtn: {
     height: 50,

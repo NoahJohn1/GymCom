@@ -10,11 +10,12 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { useApp } from '../../context/AppContext';
 import { useColors, Typography, Spacing, Radius } from '../../constants/theme';
 import { ExerciseFormModal } from '../../components/plans/ExerciseFormModal';
 import { SlotEditModal } from '../../components/plans/SlotEditModal';
-import { buildWeightDetail, buildTimeDetail } from '../../components/plans/ExerciseSlotCard';
+import { buildWeightPill, buildTimePill, buildSetsRepsOnly } from '../../components/plans/ExerciseSlotCard';
 import { Exercise, ExerciseDefaults, MuscleGroup } from '../../types';
 
 const MUSCLE_LABELS: Record<MuscleGroup, string> = {
@@ -32,6 +33,84 @@ const MUSCLE_ORDER: MuscleGroup[] = [
 type FilterOption = 'all' | MuscleGroup;
 
 const FILTER_OPTIONS: FilterOption[] = ['all', ...MUSCLE_ORDER];
+
+interface LibraryRowProps {
+  item: Exercise;
+  detail: string | null;
+  pill: string | null;
+  isPinned: boolean;
+  activeSplit: boolean;
+  onTap: () => void;
+  onPin: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}
+
+function LibraryRow({ item, detail, pill, isPinned, activeSplit, onTap, onPin, onEdit, onDelete }: LibraryRowProps) {
+  const colors = useColors();
+
+  return (
+    <View style={[styles.swipeContainer, { borderColor: colors.border }]}>
+      <ReanimatedSwipeable
+        renderRightActions={() => (
+          <TouchableOpacity
+            style={[styles.deleteAction, { backgroundColor: colors.danger }]}
+            onPress={onDelete}
+          >
+            <Ionicons name="trash-outline" size={20} color="#fff" />
+          </TouchableOpacity>
+        )}
+        friction={2}
+        overshootRight={false}
+      >
+      <TouchableOpacity
+        style={[styles.row, { backgroundColor: colors.card }]}
+        onPress={onTap}
+        activeOpacity={1}
+        disabled={!activeSplit}
+      >
+        <TouchableOpacity
+          onPress={onPin}
+          style={styles.pinBtn}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <Ionicons
+            name={isPinned ? 'star' : 'star-outline'}
+            size={20}
+            color={isPinned ? colors.primary : colors.textSecondary}
+          />
+        </TouchableOpacity>
+
+        <View style={styles.rowContent}>
+          <Text style={[Typography.body, { color: colors.text, fontWeight: '500' }]}>{item.name}</Text>
+          {detail ? (
+            <Text style={[Typography.small, { color: colors.textSecondary }]}>{detail}</Text>
+          ) : (
+            <Text style={[Typography.small, { color: colors.textSecondary }]}>
+              {activeSplit ? 'Tap to set details' : item.equipment}
+            </Text>
+          )}
+        </View>
+
+        <View style={styles.rowActions}>
+          {pill && (
+            <View style={[styles.pill, { backgroundColor: colors.primaryLight }]}>
+              <Text style={[Typography.small, { color: colors.primary, fontWeight: '600' }]}>{pill}</Text>
+            </View>
+          )}
+          <TouchableOpacity
+            onPress={onEdit}
+            style={styles.iconBtn}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Ionicons name="pencil-outline" size={18} color={colors.primary} />
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+      </ReanimatedSwipeable>
+    </View>
+  );
+}
 
 export default function LibraryScreen() {
   const colors = useColors();
@@ -151,9 +230,17 @@ export default function LibraryScreen() {
     if (!activeSplit) return null;
     const defaults = activeSplit.exerciseDefaults?.[exercise.id];
     if (!defaults) return null;
+    return buildSetsRepsOnly(defaults, exercise.type);
+  }
+
+  function getPillString(exercise: Exercise): string | null {
+    if (!activeSplit) return null;
+    const defaults = activeSplit.exerciseDefaults?.[exercise.id];
+    if (!defaults) return null;
+    if (exercise.type === 'weight' && defaults.workingWeight == null && !defaults.bodyWeight) return null;
     return exercise.type === 'time'
-      ? buildTimeDetail(defaults)
-      : buildWeightDetail(defaults, preferences.unit);
+      ? buildTimePill(defaults)
+      : buildWeightPill(defaults, preferences.unit);
   }
 
   const editingDefaultsExercise = editingDefaultsExerciseId
@@ -164,65 +251,22 @@ export default function LibraryScreen() {
     : null;
 
   function renderExerciseRow({ item }: { item: Exercise }) {
-    const isPinned = pinnedIds.has(item.id);
     const detail = getDetailString(item);
+    const pill = getPillString(item);
+    const isPinned = pinnedIds.has(item.id);
 
     return (
-      <TouchableOpacity
-        style={[styles.row, { backgroundColor: colors.card, borderColor: colors.border }]}
-        onPress={() => handleTapExercise(item)}
-        activeOpacity={activeSplit ? 0.7 : 1}
-        disabled={!activeSplit}
-      >
-        <TouchableOpacity
-          onPress={() => togglePin(item.id)}
-          style={styles.pinBtn}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <Ionicons
-            name={isPinned ? 'star' : 'star-outline'}
-            size={20}
-            color={isPinned ? colors.primary : colors.textSecondary}
-          />
-        </TouchableOpacity>
-
-        <View style={styles.rowContent}>
-          <View style={styles.nameRow}>
-            <Text style={[Typography.body, { color: colors.text, fontWeight: '500', flex: 1 }]}>{item.name}</Text>
-            <View style={[styles.typeBadge, { backgroundColor: colors.primaryLight }]}>
-              <Text style={[Typography.small, { color: colors.primary, fontWeight: '600' }]}>
-                {item.type === 'time' ? 'Time' : 'Weight'}
-              </Text>
-            </View>
-          </View>
-          {detail ? (
-            <Text style={[Typography.small, { color: colors.textSecondary }]}>
-              {detail}
-            </Text>
-          ) : (
-            <Text style={[Typography.small, { color: colors.textSecondary }]}>
-              {activeSplit ? 'Tap to set details' : item.equipment}
-            </Text>
-          )}
-        </View>
-
-        <View style={styles.rowActions}>
-          <TouchableOpacity
-            onPress={() => handleEdit(item)}
-            style={styles.iconBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="pencil-outline" size={18} color={colors.primary} />
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => handleDelete(item)}
-            style={styles.iconBtn}
-            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-          >
-            <Ionicons name="trash-outline" size={18} color={colors.danger} />
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
+      <LibraryRow
+        item={item}
+        detail={detail}
+        pill={pill}
+        isPinned={isPinned}
+        activeSplit={!!activeSplit}
+        onTap={() => handleTapExercise(item)}
+        onPin={() => togglePin(item.id)}
+        onEdit={() => handleEdit(item)}
+        onDelete={() => handleDelete(item)}
+      />
     );
   }
 
@@ -348,14 +392,24 @@ const styles = StyleSheet.create({
 
   // ── Exercise rows ──
   listContent: { paddingHorizontal: Spacing.md, paddingBottom: 100 },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  swipeContainer: {
+    marginBottom: Spacing.xs,
     borderRadius: Radius.md,
     borderWidth: 1,
+    overflow: 'hidden',
+  },
+  deleteAction: {
+    width: 72,
+    alignSelf: 'stretch',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  row: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingRight: Spacing.md,
     paddingVertical: Spacing.sm,
-    marginBottom: Spacing.xs,
   },
   pinBtn: {
     width: 44,
@@ -364,13 +418,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   rowContent: { flex: 1, gap: 2 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
-  typeBadge: {
+  pill: {
     paddingHorizontal: Spacing.sm,
-    paddingVertical: 2,
+    paddingVertical: 4,
     borderRadius: Radius.sm,
   },
-  rowActions: { flexDirection: 'row', gap: Spacing.sm },
+  rowActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.sm },
   iconBtn: { padding: Spacing.xs },
 
   // ── Empty / FAB ──

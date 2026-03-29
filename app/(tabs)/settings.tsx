@@ -5,6 +5,7 @@ import { useColors, Spacing } from '../../constants/theme';
 import { ProfileSection } from '../../components/settings/ProfileSection';
 import { ThemeColorPicker } from '../../components/settings/ThemeColorPicker';
 import { DevSplitSettings } from '../../components/settings/DevSplitSettings';
+import { SplitDaySettings } from '../../components/settings/SplitDaySettings';
 
 export default function SettingsScreen() {
   const colors = useColors();
@@ -18,6 +19,7 @@ export default function SettingsScreen() {
       >
         <ProfileSection />
         <ThemeColorPicker />
+        <SplitDaySettings />
         <DevSplitSettings />
       </ScrollView>
     </SafeAreaView>

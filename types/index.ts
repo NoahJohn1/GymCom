@@ -45,6 +45,8 @@ export interface ExerciseDefaults {
   reps?: string;
   /** Weight-based: current working weight (raw number, unit from preferences) */
   workingWeight?: number;
+  /** Weight-based: exercise uses body weight (no external load) */
+  bodyWeight?: boolean;
   /** Time-based: target duration e.g. "60s" */
   duration?: string;
   /** Time-based: personal best in seconds */
